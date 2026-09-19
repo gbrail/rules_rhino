@@ -22,9 +22,9 @@ def junit5_test(
         main_class = "org.brail.rules_rhino.java.JUnit5Runner",
         args = [clazz] + args,
         runtime_deps = runtime_deps + [
-            "@maven//:org_junit_platform_junit_platform_launcher",
-            "@maven//:org_junit_platform_junit_platform_engine",
-            "@maven//:org_junit_jupiter_junit_jupiter_engine",
+            "@rules_rhino//java:junit_platform_launcher",
+            "@rules_rhino//java:junit_platform_engine",
+            "@rules_rhino//java:junit_jupiter_engine",
             "@rules_rhino//java:junit5_runner",
         ],
         test_class = clazz,

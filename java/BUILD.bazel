@@ -1,13 +1,73 @@
 load("@rules_java//java:defs.bzl", "java_library")
-load("//java:defs.bzl", "java_test_suite", "junit5_test")
+load("//java:defs.bzl", "google_java_format", "google_java_format_check", "google_java_format_fix", "java_test_suite", "junit5_test")
+load("//java/private:googlejavaformat.bzl", "gjf_jvm_flags")
+
+google_java_format()
+
+google_java_format_check(
+    name = "gjf_check",
+    files = glob(["**/*.java"]),
+)
+
+google_java_format_fix(
+    name = "gjf_fix",
+)
+
+java_library(
+    name = "format_driver",
+    srcs = ["src/org/brail/rules_rhino/java/FormatDriver.java"],
+    deps = [":google_java_format_jar"],
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "google_java_format_jar",
+    actual = "@rhino_maven//:com_google_googlejavaformat_google_java_format",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "junit_jupiter_api",
+    actual = "@rhino_maven//:org_junit_jupiter_junit_jupiter_api",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "junit_jupiter_engine",
+    actual = "@rhino_maven//:org_junit_jupiter_junit_jupiter_engine",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "junit_platform_engine",
+    actual = "@rhino_maven//:org_junit_platform_junit_platform_engine",
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "junit_platform_launcher",
+    actual = "@rhino_maven//:org_junit_platform_junit_platform_launcher",
+    visibility = ["//visibility:public"],
+)
+
+junit5_test(
+    name = "googlejavaformat_test",
+    srcs = ["test/org/brail/rules_rhino/java/test/GoogleJavaFormatGoldenTest.java"],
+    test_class = "org.brail.rules_rhino.java.test.GoogleJavaFormatGoldenTest",
+    deps = [
+        ":google_java_format_jar",
+        "@rhino_maven//:org_junit_jupiter_junit_jupiter_api",
+    ],
+    jvm_flags = gjf_jvm_flags,
+)
 
 java_library(
     name = "junit5_runner",
     srcs = ["src/org/brail/rules_rhino/java/JUnit5Runner.java"],
     deps = [
-        "@maven//:org_junit_jupiter_junit_jupiter_engine",
-        "@maven//:org_junit_platform_junit_platform_engine",
-        "@maven//:org_junit_platform_junit_platform_launcher",
+        "@rhino_maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@rhino_maven//:org_junit_platform_junit_platform_engine",
+        "@rhino_maven//:org_junit_platform_junit_platform_launcher",
     ],
     visibility = ["//visibility:public"],
 )
@@ -17,14 +77,14 @@ junit5_test(
     srcs = ["test/org/brail/rules_rhino/java/test/SmokeTest.java"],
     test_class = "org.brail.rules_rhino.java.test.SmokeTest",
     deps = [
-        "@maven//:org_junit_jupiter_junit_jupiter_api",
+        "@rhino_maven//:org_junit_jupiter_junit_jupiter_api",
     ],
 )
 
 java_test_suite(
     name = "smoke_suite",
-    srcs = glob(["test/**/*.java"]),
+    srcs = glob(["test/**/*.java"], exclude = ["test/**/GoogleJavaFormatGoldenTest.java"]),
     deps = [
-        "@maven//:org_junit_jupiter_junit_jupiter_api",
+        "@rhino_maven//:org_junit_jupiter_junit_jupiter_api",
     ],
 )

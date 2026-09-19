@@ -38,8 +38,7 @@ public class JUnit5Runner {
         summary.getTestsAbortedCount(),
         summary.getTestsSkippedCount());
 
-    if (summary.getTestsFailedCount() > 0 || summary.getTestsAbortedCount() > 0)
- {
+    if (summary.getTestsFailedCount() > 0 || summary.getTestsAbortedCount() > 0) {
       System.exit(1);
     }
     System.exit(0);

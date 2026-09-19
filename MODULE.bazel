@@ -6,12 +6,14 @@ module(
 
 bazel_dep(name = "rules_java", version = "9.6.1")
 bazel_dep(name = "rules_jvm_external", version = "7.0")
+bazel_dep(name = "rules_shell", version = "0.6.1")
 
 maven = use_extension("@rules_jvm_external//:extensions.bzl", "maven")
 
 # Whenever you change this you must run:
-#    REPIN=1 bazel run @maven//:pin
+#    REPIN=1 bazel run @rhino_maven//:pin
 maven.install(
+    name = "rhino_maven",
     artifacts = [
         "org.junit.jupiter:junit-jupiter:5.10.3",
         "org.junit.jupiter:junit-jupiter-api:5.10.3",
@@ -22,6 +24,7 @@ maven.install(
         "org.junit.platform:junit-platform-console-standalone:1.10.3",
         "org.junit.platform:junit-platform-runner:1.10.3",
         "org.junit.platform:junit-platform-reporting:1.10.3",
+        "com.google.googlejavaformat:google-java-format:1.35.0",
     ],
     known_contributing_modules = ["protobuf"],
     lock_file = "//:maven_install.json",
@@ -29,4 +32,4 @@ maven.install(
         "https://repo1.maven.org/maven2",
     ],
 )
-use_repo(maven, "maven")
+use_repo(maven, "rhino_maven")
