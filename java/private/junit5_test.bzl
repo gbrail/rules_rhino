@@ -25,7 +25,8 @@ def junit5_test(
             "@maven//:org_junit_platform_junit_platform_launcher",
             "@maven//:org_junit_platform_junit_platform_engine",
             "@maven//:org_junit_jupiter_junit_jupiter_engine",
-            "//java:junit5_runner",
+            "@rules_rhino//java:junit5_runner",
         ],
+        test_class = clazz,
         **kwargs
     )

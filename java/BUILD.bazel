@@ -9,6 +9,7 @@ java_library(
         "@maven//:org_junit_platform_junit_platform_engine",
         "@maven//:org_junit_platform_junit_platform_launcher",
     ],
+    visibility = ["//visibility:public"],
 )
 
 junit5_test(

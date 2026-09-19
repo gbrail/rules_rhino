@@ -23,6 +23,7 @@ maven.install(
         "org.junit.platform:junit-platform-runner:1.10.3",
         "org.junit.platform:junit-platform-reporting:1.10.3",
     ],
+    known_contributing_modules = ["protobuf"],
     lock_file = "//:maven_install.json",
     repositories = [
         "https://repo1.maven.org/maven2",
