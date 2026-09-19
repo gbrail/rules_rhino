@@ -1,0 +1,29 @@
+load("@rules_java//java:defs.bzl", "java_library")
+load("//java:defs.bzl", "java_test_suite", "junit5_test")
+
+java_library(
+    name = "junit5_runner",
+    srcs = ["src/org/brail/rules_rhino/java/JUnit5Runner.java"],
+    deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_engine",
+        "@maven//:org_junit_platform_junit_platform_engine",
+        "@maven//:org_junit_platform_junit_platform_launcher",
+    ],
+)
+
+junit5_test(
+    name = "smoke_test",
+    srcs = ["test/org/brail/rules_rhino/java/test/SmokeTest.java"],
+    test_class = "org.brail.rules_rhino.java.test.SmokeTest",
+    deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_api",
+    ],
+)
+
+java_test_suite(
+    name = "smoke_suite",
+    srcs = glob(["test/**/*.java"]),
+    deps = [
+        "@maven//:org_junit_jupiter_junit_jupiter_api",
+    ],
+)
