@@ -32,13 +32,8 @@ def _babel_preprocess_impl(ctx):
         config_file = ctx.file.config
         node_modules = ctx.files._node_modules
 
-        args = ctx.actions.args()
-        args.add(wrapper_js.path)
-        args.add(src.path)
-        args.add(out_file.path)
-        args.add(config_file.path)
-
-        # To resolve Babel plugins, we must set NODE_PATH to the node_modules directory.
+        # To resolve Babel plugins, we must point at the node_modules directory,
+        # both for NODE_PATH and so the wrapper can set Babel's cwd.
         node_modules_root = ""
         if node_modules:
             first_file = node_modules[0].path
@@ -47,6 +42,13 @@ def _babel_preprocess_impl(ctx):
             parts = first_file.split("node_modules")
             if len(parts) > 1:
                 node_modules_root = parts[0] + "node_modules"
+
+        args = ctx.actions.args()
+        args.add(wrapper_js.path)
+        args.add(src.path)
+        args.add(out_file.path)
+        args.add(config_file.path)
+        args.add(node_modules_root)
 
         ctx.actions.run(
             outputs = [out_file],
