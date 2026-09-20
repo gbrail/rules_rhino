@@ -1,0 +1,9 @@
+{
+  "sourceType": "script",
+  "plugins": [
+    "@babel/plugin-transform-block-scoping",
+    "@babel/plugin-transform-class-properties",
+    "@babel/plugin-transform-classes",
+    "@babel/plugin-transform-spread"
+  ]
+}

@@ -33,3 +33,6 @@ maven.install(
     ],
 )
 use_repo(maven, "rhino_maven")
+
+babel_deps = use_extension("//babel/private:babel_repo.bzl", "babel_deps_extension")
+use_repo(babel_deps, "rhino_babel_deps")

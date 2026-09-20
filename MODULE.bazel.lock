@@ -270,6 +270,22 @@
   },
   "selectedYankedVersions": {},
   "moduleExtensions": {
+    "//babel/private:babel_repo.bzl%babel_deps_extension": {
+      "general": {
+        "bzlTransitiveDigest": "ZXqiNUT8aMkPJjcFR7s997AnX0IwPaXoY7QAnjvuVR8=",
+        "usagesDigest": "b4AmgXBWh68B8fTs+NInOCwIG8Im3qeVW3ZGBLowIak=",
+        "recordedInputs": [],
+        "generatedRepoSpecs": {
+          "rhino_babel_deps": {
+            "repoRuleId": "@@//babel/private:babel_repo.bzl%babel_deps_repo",
+            "attributes": {
+              "package_json": "@@//babel:package.json",
+              "package_lock": "@@//babel:package-lock.json"
+            }
+          }
+        }
+      }
+    },
     "@@rules_android+//rules/android_sdk_repository:rule.bzl%android_sdk_repository_extension": {
       "general": {
         "bzlTransitiveDigest": "+rMrzIrv7sImYmkbXJYv+gFpTJQ79X3MpwwMLI2A+oA=",

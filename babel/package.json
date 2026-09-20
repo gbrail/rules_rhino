@@ -1,0 +1,18 @@
+{
+  "devDependencies": {
+    "@babel/cli": "^7.28.3",
+    "@babel/core": "^7.28.5",
+    "@babel/plugin-transform-class-properties": "^7.28.6",
+    "@babel/plugin-transform-class-static-block": "^7.29.7",
+    "@babel/plugin-transform-classes": "^7.28.4",
+    "@babel/plugin-transform-explicit-resource-management": "^7.29.7",
+    "@babel/plugin-transform-object-rest-spread": "^7.28.6",
+    "@babel/plugin-transform-parameters": "^7.27.7",
+    "@babel/plugin-transform-private-methods": "^7.29.7",
+    "@babel/plugin-transform-spread": "^7.28.6",
+    "babel-plugin-transform-async-to-promises": "^0.8.18"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": []
+  }
+}
