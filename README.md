@@ -2,35 +2,51 @@
 
 Some rules for Bazel.
 
-## Managing Babel plugins
+## Babel rules
 
-The `babel_preprocess` rule gets its Babel plugins from the npm repo
-`@rhino_babel_deps`, which is populated by running `npm ci` against
-`babel/package.json` + `babel/package-lock.json`.
+`babel_preprocess` transforms JavaScript sources with Babel. Each consumer
+provides its own Babel configuration **and** its own npm dependency set:
 
-To add (or update) a plugin:
+```starlark
+load("@rules_rhino//babel:defs.bzl", "babel_preprocess", "npm_install")
 
-1. Add the dependency to `babel/package.json`.
-2. Regenerate the lock file (the repo rule runs `npm ci`, which fails if
-   the lock file is out of sync):
+npm_install(
+    name = "babel_deps",
+    package_json = "//bazel:package.json",
+    package_lock = "//bazel:package-lock.json",
+)
 
-       cd babel && npm install --package-lock-only
+babel_preprocess(
+    name = "preprocessed",
+    srcs = glob(["src/**/*.js"]),
+    prefix = "js",
+    config = "//bazel:babel.config.json",
+    npm = ":babel_deps",
+)
+```
 
-3. Force a re-fetch of the npm repo in **every** project that uses it.
-   Bzlmod does not re-run the repo rule when these files change, so delete
-   the fetched repo from each output base:
+`npm_install` runs `npm ci` as an ordinary build action and installs into
+a declared output directory, so Bazel re-runs it automatically whenever
+`package.json` or `package-lock.json` changes. There is no repository rule
+and no fetched npm repo to refetch, so node_modules can never be stale
+relative to the build — on any machine, after any pin bump.
 
-       # in rules_rhino itself:
-       rm -rf $(bazel info output_base)/external/+babel_deps_extension+rhino_babel_deps*
+### Adding a Babel plugin
 
-       # in a consuming project (e.g. ithaca, rhino-benchmarks):
-       rm -rf $(bazel info output_base)/external/rules_rhino++babel_deps_extension+rhino_babel_deps*
+1. Add the plugin to your project's `package.json` (e.g.
+   `bazel/package.json`), next to your `babel.config.json`, which must list
+   it under `plugins`/`presets`.
+2. Regenerate the lock file (`npm ci` fails if the two disagree):
 
-   Note the different canonical repo name: inside the defining module the
-   repo is `+babel_deps_extension+rhino_babel_deps`, while in consumers it
-   carries the `rules_rhino++` module prefix.
+       cd bazel && npm install --package-lock-only
 
-4. Rebuild; the repo re-runs `npm ci` and the Babel actions re-execute.
+3. Rebuild. Bazel re-runs the `npm ci` action and then the Babel actions.
 
-Consumers pass their own Babel configuration to `babel_preprocess` via the
-`config` attribute; only the plugin set lives in this module.
+The `npm ci` action verifies after installing that every package the lock
+file requires on this platform is present on disk; an interrupted install
+(timeout, antivirus, OneDrive) fails the build immediately instead of
+surfacing later as a missing Babel plugin.
+
+The actions run `node` and `npm` from the build machine's PATH (so the
+workspace needs `build --action_env=PATH` in `.bazelrc`) and download from
+the npm registry, so builds need network access.

@@ -1,14 +1,20 @@
-load("//babel:defs.bzl", "babel_preprocess")
+load("//babel:defs.bzl", "babel_preprocess", "npm_install")
 
 exports_files([
     "babel_wrapper.js",
-    "package.json",
-    "package-lock.json",
+    "npm_install.js",
 ])
+
+npm_install(
+    name = "sample_deps",
+    package_json = "test/package.json",
+    package_lock = "test/package-lock.json",
+)
 
 babel_preprocess(
     name = "sample_preprocessed",
     srcs = ["test/Sample.js"],
     prefix = "sample",
     config = "test/babel.config.json",
+    npm = ":sample_deps",
 )

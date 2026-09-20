@@ -1,6 +1,8 @@
 def _babel_preprocess_impl(ctx):
     all_outs = []
     node_executable = "node"
+    # The node_modules directory installed by the consumer's npm_install target.
+    node_modules_dir = ctx.files.npm[0]
 
     for src in ctx.files.srcs:
         src_path = src.path
@@ -30,32 +32,19 @@ def _babel_preprocess_impl(ctx):
 
         wrapper_js = ctx.file._wrapper_js
         config_file = ctx.file.config
-        node_modules = ctx.files._node_modules
-
-        # To resolve Babel plugins, we must point at the node_modules directory,
-        # both for NODE_PATH and so the wrapper can set Babel's cwd.
-        node_modules_root = ""
-        if node_modules:
-            first_file = node_modules[0].path
-
-            # Use simple string splitting since we can't use 'os' module in Starlark
-            parts = first_file.split("node_modules")
-            if len(parts) > 1:
-                node_modules_root = parts[0] + "node_modules"
 
         args = ctx.actions.args()
         args.add(wrapper_js.path)
         args.add(src.path)
         args.add(out_file.path)
         args.add(config_file.path)
-        args.add(node_modules_root)
+        args.add(node_modules_dir.path)
 
         ctx.actions.run(
             outputs = [out_file],
-            inputs = [src, config_file, wrapper_js] + node_modules,
+            inputs = [src, config_file, wrapper_js, node_modules_dir],
             executable = node_executable,
             arguments = [args],
-            env = {"NODE_PATH": node_modules_root} if node_modules_root else None,
             mnemonic = "BabelCompile",
             progress_message = "Compiling %s with Babel" % src_path,
         )
@@ -79,8 +68,9 @@ babel_preprocess = rule(
             allow_single_file = True,
             default = "@rules_rhino//babel:babel_wrapper.js",
         ),
-        "_node_modules": attr.label(
-            default = "@rhino_babel_deps//:node_modules",
+        "npm": attr.label(
+            mandatory = True,
+            doc = "An npm_install target providing the Babel plugins and presets the config references",
         ),
     },
 )

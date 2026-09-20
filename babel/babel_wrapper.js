@@ -1,13 +1,21 @@
 const fs = require('fs');
-const babel = require('@babel/core');
 const path = require('path');
+const { createRequire } = require('module');
 
-// Babel resolves plugin/preset names by walking node_modules up from its "cwd"
-// option, which is unreliable inside a Bazel action (the action's working
-// directory does not have the build's node_modules among its ancestors, and
-// behavior varies by platform). Resolve the names here instead: a plain
-// require from this file consults NODE_PATH, which the build points at the
-// node_modules it installed. Babel loads absolute paths directly.
+const [,, srcFile, outFile, configFile, nodeModulesDir] = process.argv;
+
+if (!srcFile || !outFile || !configFile || !nodeModulesDir) {
+    console.error('Usage: node babel_wrapper.js <src> <out> <config> <nodeModulesDir>');
+    process.exit(1);
+}
+
+// Every Babel package (core, plugins, presets) is resolved from the
+// node_modules directory the build installed, on every platform, regardless
+// of the action's working directory or anything present on the host.
+// Rooted at the package.json npm copies into the directory; Node's module
+// walk then finds <nodeModulesDir>/node_modules.
+const req = createRequire(path.join(path.resolve(nodeModulesDir), 'package.json'));
+
 function resolveBabelItem(type, name) {
     if (path.isAbsolute(name)) {
         return name;
@@ -22,14 +30,14 @@ function resolveBabelItem(type, name) {
     candidates.push(name);
     for (const candidate of candidates) {
         try {
-            return require.resolve(candidate);
+            return req.resolve(candidate);
         } catch (err) {
             // Try the next candidate.
         }
     }
     throw new Error(
-        `Cannot resolve Babel ${type} "${name}" from the node_modules the build provides. ` +
-        `Make sure it is listed in the package.json that the build installs.`
+        `Cannot resolve Babel ${type} "${name}" in ${nodeModulesDir}. ` +
+        `Make sure it is listed in the package.json you pass to npm_install.`
     );
 }
 
@@ -43,28 +51,18 @@ function resolveNames(type, items) {
 }
 
 async function run() {
-    const [,, srcFile, outFile, configFile, nodeModulesRoot] = process.argv;
-
-    if (!srcFile || !outFile || !configFile) {
-        console.error('Usage: node babel_wrapper.js <src> <out> <config> [nodeModules]');
-        process.exit(1);
-    }
-
     try {
-        const configContent = fs.readFileSync(configFile, 'utf8');
-        const config = JSON.parse(configContent);
+        const config = JSON.parse(fs.readFileSync(configFile, 'utf8'));
 
         const options = {
             ...config,
             filename: srcFile,
             plugins: resolveNames('plugin', config.plugins),
             presets: resolveNames('preset', config.presets),
+            cwd: nodeModulesDir,
         };
 
-        if (nodeModulesRoot) {
-            options.cwd = path.dirname(path.resolve(nodeModulesRoot));
-        }
-
+        const babel = req('@babel/core');
         const result = await babel.transformFileAsync(srcFile, options);
 
         if (result && result.code) {
