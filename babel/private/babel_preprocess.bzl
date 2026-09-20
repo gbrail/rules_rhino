@@ -15,7 +15,17 @@ def _babel_preprocess_impl(ctx):
         else:
             rel_path = src_path
 
-        out_file = ctx.actions.declare_file(ctx.attr.prefix + "/" + rel_path)
+        # Optionally strip a leading prefix (e.g. "JetStream") so outputs keep
+        # their original top-level layout on the classpath.
+        strip = ctx.attr.strip_prefix
+        if strip and rel_path.startswith(strip + "/"):
+            rel_path = rel_path[len(strip) + 1:]
+
+        if ctx.attr.prefix:
+            out_rel = ctx.attr.prefix + "/" + rel_path
+        else:
+            out_rel = rel_path
+        out_file = ctx.actions.declare_file(out_rel)
         all_outs.append(out_file)
 
         wrapper_js = ctx.file._wrapper_js
@@ -54,7 +64,10 @@ babel_preprocess = rule(
     implementation = _babel_preprocess_impl,
     attrs = {
         "srcs": attr.label_list(allow_files = True),
-        "prefix": attr.string(doc = "Prefix for output"),
+        "prefix": attr.string(doc = "Prefix for output; if empty, outputs keep their source paths"),
+        "strip_prefix": attr.string(
+            doc = "Leading path prefix (e.g. \"JetStream\") to strip from source paths when naming outputs",
+        ),
         "config": attr.label(
             mandatory = True,
             allow_single_file = True,
