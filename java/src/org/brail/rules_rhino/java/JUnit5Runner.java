@@ -32,13 +32,16 @@ public class JUnit5Runner {
     summary.printFailuresTo(new PrintWriter(System.out));
 
     System.out.printf(
-        "Tests run: %d, Failures: %d, Aborted: %d, Skipped: %d%n",
+        "Tests run: %d, Failures: %d, Aborted: %d, Skipped: %d, Container failures: %d%n",
         summary.getTestsStartedCount(),
         summary.getTestsFailedCount(),
         summary.getTestsAbortedCount(),
-        summary.getTestsSkippedCount());
+        summary.getTestsSkippedCount(),
+        summary.getContainersFailedCount());
 
-    if (summary.getTestsFailedCount() > 0 || summary.getTestsAbortedCount() > 0) {
+    if (summary.getTestsFailedCount() > 0
+        || summary.getTestsAbortedCount() > 0
+        || summary.getContainersFailedCount() > 0) {
       System.exit(1);
     }
     System.exit(0);

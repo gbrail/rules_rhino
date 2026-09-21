@@ -14,15 +14,65 @@ fs.copyFileSync(pkgJson, path.join(outDir, 'package.json'));
 fs.copyFileSync(pkgLock, path.join(outDir, 'package-lock.json'));
 
 console.log('Running npm ci into ' + outDir);
-// The action's sandbox makes the host read-only, so the npm cache must live
-// inside the output directory. It is deleted again before the action ends, so
-// it does not end up in the action output.
+// The npm cache must live inside the output directory so it works whether or
+// not the host cache directory is writable. It is deleted again before the
+// action ends, so it does not end up in the action output.
 const cacheDir = path.join(outDir, '.npm-cache');
-const res = spawnSync(
-    'npm',
-    ['ci', '--prefix', outDir, '--no-audit', '--no-fund', '--cache', cacheDir],
-    { stdio: 'inherit', shell: process.platform === 'win32' }
-);
+// Run npm as a plain node script instead of shelling out. Bazel actions run
+// with a minimal environment (no PATH, no ComSpec on Windows), so "npm"
+// cannot be resolved and shell:true cannot find cmd.exe. The npm that ships
+// with Node can be located from process.execPath without a shell:
+//   Windows (nodejs.org installer): <nodeDir>/node_modules/npm
+//   nvm / Homebrew / tarball installs:  <nodeDir>/../lib/node_modules/npm
+//   distro packages (Debian, ...):      resolve "npm" from PATH; npm-cli.js
+//                                       sits next to the resolved script.
+function findOnPath(name) {
+    const dirs = (process.env.PATH || '').split(path.delimiter);
+    for (const dir of dirs) {
+        if (!dir) continue;
+        const candidate = path.join(dir, name);
+        if (fs.existsSync(candidate)) {
+            return candidate;
+        }
+    }
+    return null;
+}
+
+function findNpmCli() {
+    const nodeDir = path.dirname(process.execPath);
+    const candidates = [
+        path.join(nodeDir, 'node_modules', 'npm', 'bin', 'npm-cli.js'),
+        path.join(nodeDir, '..', 'lib', 'node_modules', 'npm', 'bin', 'npm-cli.js'),
+    ];
+    for (const candidate of candidates) {
+        if (fs.existsSync(candidate)) {
+            return candidate;
+        }
+    }
+    const npmExe = findOnPath('npm');
+    if (npmExe) {
+        try {
+            const nextToNpm = path.join(
+                path.dirname(fs.realpathSync(npmExe)), 'npm-cli.js');
+            if (fs.existsSync(nextToNpm)) {
+                return nextToNpm;
+            }
+        } catch (err) {
+            // npm is not a resolvable link; fall through.
+        }
+    }
+    return null;
+}
+
+const npmArgs = ['ci', '--prefix', outDir, '--no-audit', '--no-fund', '--cache', cacheDir];
+const npmCli = findNpmCli();
+let res;
+if (npmCli) {
+    res = spawnSync(process.execPath, [npmCli, ...npmArgs], { stdio: 'inherit' });
+} else {
+    // Last resort: hope npm is reachable on PATH via the system shell.
+    res = spawnSync('npm', npmArgs, { stdio: 'inherit', shell: process.platform === 'win32' });
+}
 if (res.error) {
     console.error('Failed to run npm: ' + res.error);
     process.exit(1);
